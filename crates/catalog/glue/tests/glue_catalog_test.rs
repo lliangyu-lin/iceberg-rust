@@ -237,7 +237,7 @@ async fn test_create_table() -> Result<()> {
             .is_some_and(|location| location.starts_with("s3a://warehouse/hive/metadata/00000-"))
     );
     assert!(
-        catalog
+        result
             .file_io()
             .exists("s3a://warehouse/hive/metadata/")
             .await?
