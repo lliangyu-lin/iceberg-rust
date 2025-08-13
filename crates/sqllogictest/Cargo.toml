@@ -33,6 +33,12 @@ enum-ordinalize = { workspace = true }
 indicatif = { workspace = true }
 sqllogictest = { workspace = true }
 toml = { workspace = true }
+tokio = "1.47.0"
+
+[[test]]
+harness = false
+name = "sqllogictests"
+path = "bin/sqllogictests.rs"
 
 [package.metadata.cargo-machete]
 # These dependencies are added to ensure minimal dependency version

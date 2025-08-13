@@ -3748,6 +3748,7 @@ dependencies = [
  "enum-ordinalize",
  "indicatif",
  "sqllogictest",
+ "tokio",
  "toml",
 ]
 
