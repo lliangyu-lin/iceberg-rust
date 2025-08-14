@@ -35,16 +35,6 @@ pub struct DataFusionEngine {
 
 #[async_trait::async_trait]
 impl Engine for DataFusionEngine {
-    async fn new(config: TomlTable) -> Result<Self> {
-        let session_config = SessionConfig::new().with_target_partitions(4);
-        let ctx = SessionContext::new_with_config(session_config);
-        ctx.register_catalog("default", Self::create_catalog(&config).await?);
-
-        Ok(Self {
-            datafusion: DataFusion::new(ctx, PathBuf::from("testdata"), ProgressBar::new(100)),
-        })
-    }
-
     async fn run_slt_file(&mut self, path: &Path) -> Result<()> {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read slt file {:?}", path))
@@ -61,6 +51,16 @@ impl Engine for DataFusionEngine {
 }
 
 impl DataFusionEngine {
+    pub async fn new(config: TomlTable) -> Result<Self> {
+        let session_config = SessionConfig::new().with_target_partitions(4);
+        let ctx = SessionContext::new_with_config(session_config);
+        ctx.register_catalog("default", Self::create_catalog(&config).await?);
+
+        Ok(Self {
+            datafusion: DataFusion::new(ctx, PathBuf::from("testdata"), ProgressBar::new(100)),
+        })
+    }
+
     async fn create_catalog(_: &TomlTable) -> anyhow::Result<Arc<dyn CatalogProvider>> {
         todo!()
     }

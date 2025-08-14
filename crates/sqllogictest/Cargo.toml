@@ -34,6 +34,12 @@ indicatif = { workspace = true }
 sqllogictest = { workspace = true }
 toml = { workspace = true }
 tokio = "1.47.0"
+env_logger = "0.11.8"
+log = "0.4.25"
+itertools = "0.13.0"
+
+[dev-dependencies]
+libtest-mimic = "0.7.3"
 
 [[test]]
 harness = false

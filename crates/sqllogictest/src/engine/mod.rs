@@ -24,7 +24,13 @@ use toml::Table as TomlTable;
 use crate::error::Result;
 
 #[async_trait::async_trait]
-pub trait Engine: Sized {
-    async fn new(config: TomlTable) -> Result<Self>;
+pub trait Engine {
     async fn run_slt_file(&mut self, path: &Path) -> Result<()>;
 }
+
+// pub async fn load_engine(typ: &str, cfg: TomlTable) -> Result<Box<dyn Engine>> {
+//     match typ {
+//         "datafusion" => Ok(Box::new(DataFusionEngine::new(cfg).await?)),
+//         _ => Err(anyhow::anyhow!("Unsupported engine type: {}", typ).into())
+//     }
+// }

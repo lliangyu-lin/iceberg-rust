@@ -3746,7 +3746,11 @@ dependencies = [
  "datafusion",
  "datafusion-sqllogictest",
  "enum-ordinalize",
+ "env_logger",
  "indicatif",
+ "itertools 0.13.0",
+ "libtest-mimic 0.7.3",
+ "log",
  "sqllogictest",
  "tokio",
  "toml",
@@ -4259,6 +4263,18 @@ dependencies = [
  "cc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "libtest-mimic"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc0bda45ed5b3a2904262c1bb91e526127aa70e7ef3758aba2ef93cf896b9b58"
+dependencies = [
+ "clap",
+ "escape8259",
+ "termcolor",
+ "threadpool",
 ]
 
 [[package]]
@@ -6558,7 +6574,7 @@ dependencies = [
  "glob",
  "humantime",
  "itertools 0.13.0",
- "libtest-mimic",
+ "libtest-mimic 0.8.1",
  "md-5",
  "owo-colors",
  "rand 0.8.5",
@@ -6965,6 +6981,15 @@ dependencies = [
  "serde_json",
  "slug",
  "unic-segment",
+]
+
+[[package]]
+name = "termcolor"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
+dependencies = [
+ "winapi-util",
 ]
 
 [[package]]

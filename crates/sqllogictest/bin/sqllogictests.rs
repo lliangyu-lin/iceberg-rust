@@ -15,14 +15,92 @@
 // specific language governing permissions and limitations
 // under the License.
 
-pub fn main(){
-    print!("Starting sqllogic tests!")
-    // tokio::runtime::Builder::new_multi_thread()
-    //     .enable_all()
-    //     .build()?
-    //     .block_on(run_tests())
+use std::fs;
+use std::path::PathBuf;
+use std::time::Instant;
+
+use datafusion::functions::math::log;
+use iceberg_sqllogictest::error::Result;
+use iceberg_sqllogictest::schedule::Schedule;
+use indicatif::{MultiProgress, ProgressDrawTarget, ProgressStyle};
+use libtest_mimic::{Arguments, Trial};
+use tokio::runtime::Handle;
+
+pub fn main() -> Result<()> {
+    print!("Starting sqllogic bin!");
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(run_tests())
 }
 
-// async fn run_tests() -> Result<()> {
+pub(crate) async fn run_tests() -> Result<()> {
+    env_logger::init();
+
+    // log::info!("Starting tokio runtime...");
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    // Parse command line arguments
+    let args = Arguments::from_args();
+
+    // log::info!("Creating tests...");
+    // let tests = collect_trials(rt.handle().clone())?;
+
+    // log::info!("Starting tests...");
+    // let result = libtest_mimic::run(&args, tests);
+    //
+    // log::info!("Shutting down tokio runtime...");
+    // drop(rt);
+    //
+    // result.exit();
+    Ok(())
+}
+
 //
+// pub(crate) fn collect_trials(handle: Handle) -> anyhow::Result<Vec<Trial>> {
+//     let schedule_files = collect_schedule_files()?;
+//     log::debug!(
+//         "Found {} schedule files: {:?}",
+//         schedule_files.len(),
+//         &schedule_files
+//     );
+//     let mut trials = Vec::with_capacity(schedule_files.len());
+//     for schedule_file in schedule_files {
+//         let h = handle.clone();
+//         let trial_name = format!(
+//             "Test schedule {}",
+//             schedule_file
+//                 .file_name()
+//                 .expect("Schedule file should have a name")
+//                 .to_string_lossy()
+//         );
+//         let trial = Trial::test(trial_name, move || {
+//             Ok(h.block_on(run_schedule(schedule_file.clone()))?)
+//         });
+//         trials.push(trial);
+//     }
+//     Ok(trials)
+// }
+
+// pub(crate) fn collect_schedule_files() -> anyhow::Result<Vec<PathBuf>> {
+//     let dir = PathBuf::from(format!("{}/test_files/schedules", env!("CARGO_MANIFEST_DIR")));
+//     let mut schedule_files = Vec::with_capacity(32);
+//     for entry in fs::read_dir(&dir)? {
+//         let entry = entry?;
+//         let path = entry.path();
+//         if path.is_file() {
+//             schedule_files.push(fs::canonicalize(dir.join(path))?);
+//         }
+//     }
+//     Ok(schedule_files)
+// }
+//
+// pub(crate) async fn run_schedule(schedule_file: PathBuf) -> anyhow::Result<()> {
+//     let schedule = Schedule::parse(schedule_file).await?;
+//     schedule.run().await?;
+//     Ok(())
 // }
