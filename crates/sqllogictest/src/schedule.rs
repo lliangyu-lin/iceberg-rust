@@ -23,7 +23,7 @@ use anyhow::anyhow;
 use itertools::Itertools;
 use toml::{Table, Value};
 
-use crate::engine::Engine;
+use crate::engine::{load_engine, Engine};
 
 /// Schedule of engines to run tests.
 pub struct Schedule {
@@ -41,79 +41,80 @@ pub struct Step {
 }
 
 impl Schedule {
-    // pub async fn parse<P: AsRef<Path>>(schedule_def_file: P) -> anyhow::Result<Self> {
-    //     let content = read_to_string(schedule_def_file)?;
-    //     let toml_value = content.parse::<Value>()?;
-    //     let toml_table = toml_value
-    //         .as_table()
-    //         .ok_or_else(|| anyhow::anyhow!("Schedule file must be a TOML table"))?;
-    //
-    //     let engines = Schedule::parse_engines(toml_table).await?;
-    //     let steps = Schedule::parse_steps(toml_table).await?;
-    //
-    //     Ok(Self { engines, steps })
-    // }
-    //
-    // async fn parse_engines(table: &Table) -> anyhow::Result<HashMap<String, dyn Engine>> {
-    //     let engines = table
-    //         .get("engines")
-    //         .ok_or_else(|| anyhow::anyhow!("Schedule file must have an 'engines' table"))?
-    //         .as_table()
-    //         .ok_or_else(|| anyhow::anyhow!("'engines' must be a table"))?;
-    //
-    //     let mut result = HashMap::new();
-    //     for (name, engine_config) in engines {
-    //         let engine_configs = engine_config
-    //             .as_table()
-    //             .ok_or_else(|| anyhow::anyhow!("Config of engine {name} is not a table"))?;
-    //
-    //         println!("name {name}, engine config {engine_configs}");
-    //
-    //         let typ = engine_configs
-    //             .get("type")
-    //             .ok_or_else(|| anyhow::anyhow!("Engine {name} doesn't have a 'type' field"))?
-    //             .as_str()
-    //             .ok_or_else(|| anyhow::anyhow!("Engine {name} type must be a string"))?;
-    //
-    //         let engine = load_engine(typ, engine_configs.clone());
-    //
-    //         result.insert(name.clone(), engine);
-    //     }
-    //
-    //     Ok(result)
-    // }
-    //
-    // async fn parse_steps(table: &Table) -> anyhow::Result<Vec<Step>> {
-    //     let steps = table
-    //         .get("steps")
-    //         .ok_or_else(|| anyhow!("steps not found"))?
-    //         .as_array()
-    //         .ok_or_else(|| anyhow!("steps is not array"))?;
-    //
-    //     steps.iter().map(Schedule::parse_step).try_collect()
-    // }
-    //
-    // fn parse_step(value: &Value) -> anyhow::Result<Step> {
-    //     let t = value
-    //         .as_table()
-    //         .ok_or_else(|| anyhow!("Step must be a table!"))?;
-    //
-    //     let engine_name = t
-    //         .get("engine")
-    //         .ok_or_else(|| anyhow!("Property engine is missing in step"))?
-    //         .as_str()
-    //         .ok_or_else(|| anyhow!("Property engine is not a string in step"))?
-    //         .to_string();
-    //
-    //     let sql = t
-    //         .get("sql")
-    //         .ok_or_else(|| anyhow!("Property sql is missing in step"))?
-    //         .as_str()
-    //         .ok_or_else(|| anyhow!("Property sqlis not a string in step"))?
-    //         .to_string();
-    //
-    //     Ok(Step { engine_name, sql })
-    // }
+    pub async fn parse<P: AsRef<Path>>(schedule_def_file: P) -> anyhow::Result<Self> {
+        let content = read_to_string(schedule_def_file)?;
+        let toml_value = content.parse::<Value>()?;
+        let toml_table = toml_value
+            .as_table()
+            .ok_or_else(|| anyhow::anyhow!("Schedule file must be a TOML table"))?;
+
+        let engines = Schedule::parse_engines(toml_table).await?;
+        let steps = Schedule::parse_steps(toml_table).await?;
+
+        Ok(Self { engines, steps })
+    }
+
+    async fn parse_engines(table: &Table) -> anyhow::Result<HashMap<String, Box<dyn Engine>>> {
+        let engines = table
+            .get("engines")
+            .ok_or_else(|| anyhow::anyhow!("Schedule file must have an 'engines' table"))?
+            .as_table()
+            .ok_or_else(|| anyhow::anyhow!("'engines' must be a table"))?;
+
+        let mut result = HashMap::new();
+        for (name, engine_config) in engines {
+            let engine_configs = engine_config
+                .as_table()
+                .ok_or_else(|| anyhow::anyhow!("Config of engine {name} is not a table"))?;
+
+            println!("name {name}, engine config {engine_configs}");
+
+            let typ = engine_configs
+                .get("type")
+                .ok_or_else(|| anyhow::anyhow!("Engine {name} doesn't have a 'type' field"))?
+                .as_str()
+                .ok_or_else(|| anyhow::anyhow!("Engine {name} type must be a string"))?;
+
+            let engine = load_engine(typ, engine_configs.clone()).await?;
+
+            result.insert(name.clone(), engine);
+        }
+
+        Ok(result)
+    }
+
+    async fn parse_steps(table: &Table) -> anyhow::Result<Vec<Step>> {
+        let steps = table
+            .get("steps")
+            .ok_or_else(|| anyhow!("steps not found"))?
+            .as_array()
+            .ok_or_else(|| anyhow!("steps is not array"))?;
+
+        steps.iter().map(Schedule::parse_step).try_collect()
+    }
+
+    fn parse_step(value: &Value) -> anyhow::Result<Step> {
+        let t = value
+            .as_table()
+            .ok_or_else(|| anyhow!("Step must be a table!"))?;
+
+        let engine_name = t
+            .get("engine")
+            .ok_or_else(|| anyhow!("Property engine is missing in step"))?
+            .as_str()
+            .ok_or_else(|| anyhow!("Property engine is not a string in step"))?
+            .to_string();
+
+        let sql = t
+            .get("sql")
+            .ok_or_else(|| anyhow!("Property sql is missing in step"))?
+            .as_str()
+            .ok_or_else(|| anyhow!("Property sqlis not a string in step"))?
+            .to_string();
+
+        println!("parsed step: {engine_name}, {sql}");
+        Ok(Step { engine_name, sql })
+    }
     //
     // pub async fn run(self) -> anyhow::Result<()> {
     //     for step_idx in 0..self.steps.len() {

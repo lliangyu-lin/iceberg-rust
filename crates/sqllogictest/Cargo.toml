@@ -31,12 +31,16 @@ datafusion = { workspace = true }
 datafusion-sqllogictest = { workspace = true }
 enum-ordinalize = { workspace = true }
 indicatif = { workspace = true }
+iceberg = { workspace = true }
+iceberg-catalog-loader = { workspace = true }
+iceberg-datafusion = { workspace = true }
 sqllogictest = { workspace = true }
 toml = { workspace = true }
-tokio = "1.47.0"
+tokio = { workspace = true }
 env_logger = "0.11.8"
 log = "0.4.25"
 itertools = "0.13.0"
+tempfile = { workspace = true }
 
 [dev-dependencies]
 libtest-mimic = "0.7.3"
@@ -44,7 +48,7 @@ libtest-mimic = "0.7.3"
 [[test]]
 harness = false
 name = "sqllogictests"
-path = "bin/sqllogictests.rs"
+path = "tests/sqllogictests.rs"
 
 [package.metadata.cargo-machete]
 # These dependencies are added to ensure minimal dependency version

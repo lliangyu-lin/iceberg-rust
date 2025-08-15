@@ -20,7 +20,7 @@ mod datafusion;
 use std::path::Path;
 
 use toml::Table as TomlTable;
-
+use crate::engine::datafusion::DataFusionEngine;
 use crate::error::Result;
 
 #[async_trait::async_trait]
@@ -28,9 +28,9 @@ pub trait Engine {
     async fn run_slt_file(&mut self, path: &Path) -> Result<()>;
 }
 
-// pub async fn load_engine(typ: &str, cfg: TomlTable) -> Result<Box<dyn Engine>> {
-//     match typ {
-//         "datafusion" => Ok(Box::new(DataFusionEngine::new(cfg).await?)),
-//         _ => Err(anyhow::anyhow!("Unsupported engine type: {}", typ).into())
-//     }
-// }
+pub async fn load_engine(typ: &str, cfg: TomlTable) -> Result<Box<dyn Engine>> {
+    match typ {
+        "datafusion" => Ok(Box::new(DataFusionEngine::new(cfg).await?)),
+        _ => Err(anyhow::anyhow!("Unsupported engine type: {}", typ).into())
+    }
+}

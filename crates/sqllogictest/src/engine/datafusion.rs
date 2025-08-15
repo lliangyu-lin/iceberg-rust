@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -23,9 +24,13 @@ use datafusion::catalog::CatalogProvider;
 use datafusion::prelude::{SessionConfig, SessionContext};
 use datafusion_sqllogictest::DataFusion;
 use indicatif::ProgressBar;
+use iceberg_catalog_loader::load;
 use sqllogictest::runner::AsyncDB;
+use tempfile::TempDir;
 use toml::Table as TomlTable;
-
+use iceberg::io::FileIOBuilder;
+use iceberg::MemoryCatalog;
+use iceberg_datafusion::IcebergCatalogProvider;
 use crate::engine::Engine;
 use crate::error::Result;
 
@@ -62,6 +67,12 @@ impl DataFusionEngine {
     }
 
     async fn create_catalog(_: &TomlTable) -> anyhow::Result<Arc<dyn CatalogProvider>> {
-        todo!()
+        let temp_dir = TempDir::new()?;
+        let file_io = FileIOBuilder::new_fs_io().build()?;
+        let iceberg_catalog = MemoryCatalog::new(file_io, Some(temp_dir.path().to_str().unwrap().to_string()));
+
+        let client = Arc::new(iceberg_catalog);
+
+        Ok(Arc::new(IcebergCatalogProvider::try_new(client).await?))
     }
 }

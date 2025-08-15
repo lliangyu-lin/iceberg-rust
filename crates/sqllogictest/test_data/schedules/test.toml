@@ -1,0 +1,6 @@
+[engines]
+datafusion = { type = "datafusion", url = "http://localhost:8181" }
+
+[[steps]]
+engine = "datafusion"
+sql = "demo/test.slt"
