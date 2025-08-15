@@ -22,18 +22,80 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use futures::lock::{Mutex, MutexGuard};
 use itertools::Itertools;
-
 use super::namespace_state::NamespaceState;
-use crate::io::FileIO;
+use crate::io::{FileIO, FileIOBuilder};
 use crate::spec::{TableMetadata, TableMetadataBuilder};
 use crate::table::Table;
-use crate::{
-    Catalog, Error, ErrorKind, MetadataLocation, Namespace, NamespaceIdent, Result, TableCommit,
-    TableCreation, TableIdent,
-};
+use crate::{Catalog, CatalogBuilder, Error, ErrorKind, MetadataLocation, Namespace, NamespaceIdent, Result, TableCommit, TableCreation, TableIdent};
+
+pub const MEMORY_CATALOG_IO_TYPE: &str = "io_type";
+
+pub const MEMORY_CATALOG_WAREHOUSE: &str = "warehouse";
 
 /// namespace `location` property
 const LOCATION: &str = "location";
+
+/// Builder for [`MemoryCatalog`].
+#[derive(Debug)]
+pub struct MemoryCatalogBuilder(MemoryCatalogConfig);
+
+impl Default for MemoryCatalogBuilder {
+    fn default() -> Self {
+        Self(MemoryCatalogConfig{
+            name: None,
+            io_type: "local".to_string(),
+            warehouse_location: None
+        })
+    }
+}
+
+impl CatalogBuilder for MemoryCatalogBuilder {
+    type C = MemoryCatalog;
+//
+    fn load(
+        mut self,
+        name: impl Into<String>,
+        props: HashMap<String, String>,
+    ) -> impl Future<Output = Result<Self::C>> + Send {
+        self.0.name = Some(name.into());
+
+        if props.contains_key(MEMORY_CATALOG_IO_TYPE) {
+            self.0.io_type = props
+                .get(MEMORY_CATALOG_IO_TYPE)
+                .cloned()
+                .unwrap_or_default();
+        }
+
+        if props.contains_key(MEMORY_CATALOG_WAREHOUSE) {
+            self.0.warehouse_location = props.get(MEMORY_CATALOG_WAREHOUSE).cloned()
+        }
+
+        let result = {
+            if self.0.name.is_none() {
+                Err(Error::new(
+                    ErrorKind::DataInvalid,
+                    "Catalog name is required",
+                ))
+            } else if self.0.io_type.is_empty() {
+                Err(Error::new(
+                    ErrorKind::DataInvalid,
+                    "Catalog io type is required",
+                ))
+            } else {
+                Ok(MemoryCatalog::new(self.0))
+            }
+        };
+
+        std::future::ready(result)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct MemoryCatalogConfig {
+    name: Option<String>,
+    io_type: String,
+    warehouse_location: Option<String>,
+}
 
 /// Memory catalog implementation.
 #[derive(Debug)]
@@ -45,11 +107,11 @@ pub struct MemoryCatalog {
 
 impl MemoryCatalog {
     /// Creates a memory catalog.
-    pub fn new(file_io: FileIO, warehouse_location: Option<String>) -> Self {
+    pub fn new(config: MemoryCatalogConfig) -> Self {
         Self {
             root_namespace_state: Mutex::new(NamespaceState::default()),
-            file_io,
-            warehouse_location,
+            file_io: FileIOBuilder::new(config.io_type).build().unwrap(),
+            warehouse_location: config.warehouse_location,
         }
     }
 
