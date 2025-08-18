@@ -27,10 +27,10 @@ use crate::engine::{load_engine, Engine};
 
 /// Schedule of engines to run tests.
 pub struct Schedule {
-    /// Map of engine names to engine instances.
-    engines: HashMap<String, Box<dyn Engine>>,
-    /// List of steps to run, each step is a sql file.
-    steps: Vec<Step>,
+    // Map of engine names to engine instances.
+    // engines: HashMap<String, Box<dyn Engine>>,
+    // List of steps to run, each step is a sql file.
+    // steps: Vec<Step>,
 }
 
 pub struct Step {
@@ -49,12 +49,14 @@ impl Schedule {
             .ok_or_else(|| anyhow::anyhow!("Schedule file must be a TOML table"))?;
 
         let engines = Schedule::parse_engines(toml_table).await?;
-        let steps = Schedule::parse_steps(toml_table).await?;
+        // let steps = Schedule::parse_steps(toml_table).await?;
 
-        Ok(Self { engines, steps })
+        // Ok(Self { engines, steps })
+        Ok(Self{})
     }
 
     async fn parse_engines(table: &Table) -> anyhow::Result<HashMap<String, Box<dyn Engine>>> {
+        println!("parsing engine...");
         let engines = table
             .get("engines")
             .ok_or_else(|| anyhow::anyhow!("Schedule file must have an 'engines' table"))?
@@ -63,6 +65,7 @@ impl Schedule {
 
         let mut result = HashMap::new();
         for (name, engine_config) in engines {
+            println!("engine: {name}, config: {engine_config}");
             let engine_configs = engine_config
                 .as_table()
                 .ok_or_else(|| anyhow::anyhow!("Config of engine {name} is not a table"))?;

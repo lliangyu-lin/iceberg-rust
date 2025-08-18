@@ -75,7 +75,6 @@ pub(crate) fn collect_trials(handle: Handle) -> anyhow::Result<Vec<Trial>> {
 
 pub(crate) fn collect_schedule_files() -> anyhow::Result<Vec<PathBuf>> {
     let dir = PathBuf::from(format!("{}/test_data/schedules", env!("CARGO_MANIFEST_DIR")));
-    let dir_str = dir.to_str().unwrap();
     let mut schedule_files = Vec::with_capacity(32);
     for entry in fs::read_dir(&dir)? {
         let entry = entry?;

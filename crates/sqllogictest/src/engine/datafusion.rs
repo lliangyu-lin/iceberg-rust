@@ -24,7 +24,6 @@ use datafusion::catalog::CatalogProvider;
 use datafusion::prelude::{SessionConfig, SessionContext};
 use datafusion_sqllogictest::DataFusion;
 use indicatif::ProgressBar;
-use iceberg_catalog_loader::load;
 use sqllogictest::runner::AsyncDB;
 use tempfile::TempDir;
 use toml::Table as TomlTable;
