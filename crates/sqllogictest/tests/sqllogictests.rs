@@ -85,11 +85,20 @@ pub(crate) fn collect_schedule_files() -> anyhow::Result<Vec<PathBuf>> {
     }
     Ok(schedule_files)
 }
-//
+
 pub(crate) async fn run_schedule(schedule_file: PathBuf) -> anyhow::Result<()> {
     let schedule_file_name = schedule_file.file_name().unwrap().to_string_lossy();
     println!("running schedule: {schedule_file_name}");
     let schedules = Schedule::parse(schedule_file).await?;
-//     schedules.run().await?;
+    schedules.run().await?;
+
+    // let mut runner = sqllogictest::Runner::new(|| async {
+    //     Ok(DataFusionSubstraitRoundTrip::new(
+    //         test_ctx.session_ctx().clone(),
+    //         relative_path.clone(),
+    //         pb.clone(),
+    //     ))
+    // });
+
     Ok(())
 }

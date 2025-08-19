@@ -17,7 +17,7 @@
 
 use std::collections::HashMap;
 use std::fs::read_to_string;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use itertools::Itertools;
@@ -28,9 +28,9 @@ use crate::engine::{load_engine, Engine};
 /// Schedule of engines to run tests.
 pub struct Schedule {
     // Map of engine names to engine instances.
-    // engines: HashMap<String, Box<dyn Engine>>,
+    engines: HashMap<String, Box<dyn Engine>>,
     // List of steps to run, each step is a sql file.
-    // steps: Vec<Step>,
+    steps: Vec<Step>,
 }
 
 pub struct Step {
@@ -49,10 +49,9 @@ impl Schedule {
             .ok_or_else(|| anyhow::anyhow!("Schedule file must be a TOML table"))?;
 
         let engines = Schedule::parse_engines(toml_table).await?;
-        // let steps = Schedule::parse_steps(toml_table).await?;
+        let steps = Schedule::parse_steps(toml_table).await?;
 
-        // Ok(Self { engines, steps })
-        Ok(Self{})
+        Ok(Self { engines, steps })
     }
 
     async fn parse_engines(table: &Table) -> anyhow::Result<HashMap<String, Box<dyn Engine>>> {
@@ -115,28 +114,32 @@ impl Schedule {
             .ok_or_else(|| anyhow!("Property sqlis not a string in step"))?
             .to_string();
 
-        println!("parsed step: {engine_name}, {sql}");
+        println!("engine: {engine_name}, sql: {sql}");
         Ok(Step { engine_name, sql })
     }
-    //
-    // pub async fn run(self) -> anyhow::Result<()> {
-    //     for step_idx in 0..self.steps.len() {
-    //         self.run_step(step_idx).await?;
-    //     }
-    //
-    //     Ok(())
-    // }
-    //
-    // async fn run_step(&self, step_index: usize) -> anyhow::Result<()> {
-    //     let step = &self.steps[step_index];
-    //
-    //     let engine = self
-    //         .engines
-    //         .get(&step.engine_name)
-    //         .ok_or_else(|| anyhow!("Engine {} not found!", step.engine_name))?
-    //         .clone();
-    //
-    //     let mut engine = engine.lock().await;
-    //     engine.run_slt_file(&step.sql).await
-    // }
+
+    pub async fn run(mut self) -> anyhow::Result<()> {
+        println!("running steps");
+
+        for step_idx in 0..self.steps.len() {
+            self.run_step(step_idx).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn run_step(&mut self, step_index: usize) -> anyhow::Result<()> {
+        println!("running step: {step_index}");
+
+        let step = &self.steps[step_index];
+
+        let engine = self
+            .engines
+            .get_mut(&step.engine_name)
+            .ok_or_else(|| anyhow!("Engine {} not found!", step.engine_name))?;
+
+        let step_sql_path = PathBuf::from(format!("{}/test_data/slts/{}", env!("CARGO_MANIFEST_DIR"), &step.sql));
+        engine.run_slt_file(step_sql_path.as_path()).await?;
+        Ok(())
+    }
 }

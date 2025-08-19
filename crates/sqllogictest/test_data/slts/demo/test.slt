@@ -1,6 +1,7 @@
-query I rowsort
-SELECT * FROM demo.s1.t1;
+query II
+SELECT 1 AS one, 2 AS two
 ----
-1
-2
-3
+1 2
+
+statement error Registering new schemas is not supported
+CREATE SCHEMA default.db1
