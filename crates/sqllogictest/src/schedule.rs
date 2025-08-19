@@ -22,15 +22,18 @@ use std::path::{Path, PathBuf};
 use anyhow::anyhow;
 use itertools::Itertools;
 use toml::{Table, Value};
-
-use crate::engine::{load_engine, Engine};
+use iceberg::{Catalog, CatalogBuilder};
+use iceberg_catalog_rest::RestCatalogBuilder;
+use crate::engine::{load_engine, EngineRunner};
 
 /// Schedule of engines to run tests.
+/// Controls the engine, storage, and catalog being used for the test steps
 pub struct Schedule {
     // Map of engine names to engine instances.
-    engines: HashMap<String, Box<dyn Engine>>,
+    engines: HashMap<String, Box<dyn EngineRunner>>,
     // List of steps to run, each step is a sql file.
     steps: Vec<Step>,
+    // catalog: Box<dyn Catalog>,
 }
 
 pub struct Step {
@@ -83,6 +86,15 @@ impl Schedule {
         }
 
         Ok(result)
+    }
+
+    async fn parse_catalog() -> anyhow::Result<Box<dyn Catalog>> {
+        let catalog = RestCatalogBuilder::default()
+            .load("rest", HashMap::from([
+
+            ])).await?;
+
+        Ok(Box::new(catalog))
     }
 
     async fn parse_steps(table: &Table) -> anyhow::Result<Vec<Step>> {
@@ -138,7 +150,7 @@ impl Schedule {
             .get_mut(&step.engine_name)
             .ok_or_else(|| anyhow!("Engine {} not found!", step.engine_name))?;
 
-        let step_sql_path = PathBuf::from(format!("{}/test_data/slts/{}", env!("CARGO_MANIFEST_DIR"), &step.sql));
+        let step_sql_path = PathBuf::from(format!("{}/testdata/slts/{}", env!("CARGO_MANIFEST_DIR"), &step.sql));
         engine.run_slt_file(step_sql_path.as_path()).await?;
         Ok(())
     }

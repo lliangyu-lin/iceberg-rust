@@ -16,6 +16,7 @@
 // under the License.
 
 mod datafusion;
+mod spark;
 
 use std::path::Path;
 
@@ -24,11 +25,11 @@ use crate::engine::datafusion::DataFusionEngine;
 use crate::error::Result;
 
 #[async_trait::async_trait]
-pub trait Engine {
+pub trait EngineRunner {
     async fn run_slt_file(&mut self, path: &Path) -> Result<()>;
 }
 
-pub async fn load_engine(typ: &str, cfg: TomlTable) -> Result<Box<dyn Engine>> {
+pub async fn load_engine(typ: &str, cfg: TomlTable) -> Result<Box<dyn EngineRunner>> {
     match typ {
         "datafusion" => Ok(Box::new(DataFusionEngine::new(cfg).await?)),
         _ => Err(anyhow::anyhow!("Unsupported engine type: {}", typ).into())

@@ -31,7 +31,7 @@ use toml::Table as TomlTable;
 use iceberg::io::FileIOBuilder;
 use iceberg::{ErrorKind, MemoryCatalog};
 use iceberg_datafusion::IcebergCatalogProvider;
-use crate::engine::Engine;
+use crate::engine::{EngineRunner};
 use crate::error::{Error, Result};
 
 pub struct DataFusionEngine {
@@ -41,12 +41,12 @@ pub struct DataFusionEngine {
 }
 
 #[async_trait::async_trait]
-impl Engine for DataFusionEngine {
+impl EngineRunner for DataFusionEngine {
     async fn run_slt_file(&mut self, path: &Path) -> Result<()> {
         let path_dir = path.to_str().unwrap();
         println!("engine running slt file on path: {path_dir}");
 
-        let mut runner = sqllogictest::Runner::new(|| async {
+        let runner = sqllogictest::Runner::new(|| async {
             Ok(DataFusion::new(
                 self.ctx.clone(),
                 self.relative_path.clone(),
@@ -56,16 +56,6 @@ impl Engine for DataFusionEngine {
 
         let result = Self::run_file_in_runner(path, runner).await;
         self.pb.finish_and_clear();
-
-        // let content = std::fs::read_to_string(path)
-        //     .with_context(|| format!("Failed to read slt file {:?}", path))
-        //     .map_err(|e| anyhow!(e))?;
-        //
-        // self.datafusion
-        //     .run(content.as_str())
-        //     .await
-        //     .with_context(|| format!("Failed to run slt file {:?}", path))
-        //     .map_err(|e| anyhow!(e))?;
 
         result
     }

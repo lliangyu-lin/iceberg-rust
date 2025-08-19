@@ -17,11 +17,15 @@
 
 use std::fs;
 use std::path::PathBuf;
-
+use std::sync::RwLock;
 use libtest_mimic::{Arguments, Trial};
 use tokio::runtime::Handle;
 use iceberg_sqllogictest::schedule;
 use iceberg_sqllogictest::schedule::Schedule;
+use iceberg_test_utils::docker::DockerCompose;
+use iceberg_test_utils::normalize_test_name;
+
+static DOCKER_COMPOSE_ENV: RwLock<Option<DockerCompose>> = RwLock::new(None);
 
 pub fn main() {
     println!("Starting sqllogic main!");
@@ -36,16 +40,34 @@ pub fn main() {
     // Parse command line arguments
     let args = Arguments::from_args();
 
+    setup_env();
+
     log::info!("Creating tests...");
     let tests = collect_trials(rt.handle().clone()).unwrap();
 
     log::info!("Starting tests...");
     let result = libtest_mimic::run(&args, tests);
-    //
-    // log::info!("Shutting down tokio runtime...");
-    // drop(rt);
-    //
+
+    log::info!("Shutting down tokio runtime...");
+    drop(rt);
+    teardown_env();
+
     result.exit();
+}
+
+fn setup_env() {
+    let mut guard = DOCKER_COMPOSE_ENV.write().unwrap();
+    let docker_compose = DockerCompose::new(
+        normalize_test_name(module_path!()),
+        format!("{}/testdata/docker", env!("CARGO_MANIFEST_DIR")),
+    );
+    docker_compose.up();
+    guard.replace(docker_compose);
+}
+
+fn teardown_env() {
+    let mut guard = DOCKER_COMPOSE_ENV.write().unwrap();
+    guard.take();
 }
 
 pub(crate) fn collect_trials(handle: Handle) -> anyhow::Result<Vec<Trial>> {
@@ -74,7 +96,7 @@ pub(crate) fn collect_trials(handle: Handle) -> anyhow::Result<Vec<Trial>> {
 }
 
 pub(crate) fn collect_schedule_files() -> anyhow::Result<Vec<PathBuf>> {
-    let dir = PathBuf::from(format!("{}/test_data/schedules", env!("CARGO_MANIFEST_DIR")));
+    let dir = PathBuf::from(format!("{}/testdata/schedules", env!("CARGO_MANIFEST_DIR")));
     let mut schedule_files = Vec::with_capacity(32);
     for entry in fs::read_dir(&dir)? {
         let entry = entry?;
@@ -91,14 +113,6 @@ pub(crate) async fn run_schedule(schedule_file: PathBuf) -> anyhow::Result<()> {
     println!("running schedule: {schedule_file_name}");
     let schedules = Schedule::parse(schedule_file).await?;
     schedules.run().await?;
-
-    // let mut runner = sqllogictest::Runner::new(|| async {
-    //     Ok(DataFusionSubstraitRoundTrip::new(
-    //         test_ctx.session_ctx().clone(),
-    //         relative_path.clone(),
-    //         pb.clone(),
-    //     ))
-    // });
 
     Ok(())
 }
