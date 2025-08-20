@@ -23,11 +23,15 @@ use arrow::array::{
 use arrow::datatypes::{DataType, Fields};
 use arrow::util::display::ArrayFormatter;
 use datafusion_common::format::DEFAULT_FORMAT_OPTIONS;
-
 use datafusion_sqllogictest::DFColumnType;
 
+use super::conversion::{
+    NULL_STR, bool_to_str, f16_to_str, f32_to_str, f64_to_str, i128_to_str, i256_to_str,
+    varchar_to_str,
+};
+
 /// Converts `batches` to a result as expected by sqllogicteset.
-pub(crate) fn convert_batches(batches: Vec<RecordBatch>) -> anyhow::Result<Vec<Vec<String>>> {
+pub fn convert_batches(batches: Vec<RecordBatch>) -> anyhow::Result<Vec<Vec<String>>> {
     if batches.is_empty() {
         Ok(vec![])
     } else {

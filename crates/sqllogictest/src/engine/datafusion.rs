@@ -15,29 +15,30 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
 use std::sync::Arc;
-use std::time::Duration;
+
 use anyhow::{Context, anyhow};
 use datafusion::catalog::CatalogProvider;
 use datafusion::prelude::{SessionConfig, SessionContext};
-use datafusion_sqllogictest::{DFColumnType, DFOutput, DataFusion};
-use indicatif::ProgressBar;
-use sqllogictest::{parse_file, DBOutput, MakeConnection, Record};
-use sqllogictest::runner::AsyncDB;
-use tempfile::TempDir;
-use toml::Table as TomlTable;
-use iceberg::io::FileIOBuilder;
-use iceberg::{ErrorKind, MemoryCatalog};
+use datafusion_sqllogictest::DataFusion;
+use iceberg::CatalogBuilder;
+use iceberg_catalog_rest::{REST_CATALOG_PROP_URI, RestCatalogBuilder};
 use iceberg_datafusion::IcebergCatalogProvider;
-use crate::engine::{EngineRunner};
+use indicatif::ProgressBar;
+use sqllogictest::runner::AsyncDB;
+use sqllogictest::{MakeConnection, Record, parse_file};
+use toml::Table as TomlTable;
+
+use crate::engine::EngineRunner;
 use crate::error::{Error, Result};
 
 pub struct DataFusionEngine {
     ctx: SessionContext,
     relative_path: PathBuf,
-    pb: ProgressBar
+    pb: ProgressBar,
+    config: TomlTable,
 }
 
 #[async_trait::async_trait]
@@ -46,15 +47,19 @@ impl EngineRunner for DataFusionEngine {
         let path_dir = path.to_str().unwrap();
         println!("engine running slt file on path: {path_dir}");
 
+        let session_config = SessionConfig::new().with_target_partitions(4);
+        let ctx = SessionContext::new_with_config(session_config);
+        ctx.register_catalog("demo", Self::create_catalog(&self.config).await?);
+
         let runner = sqllogictest::Runner::new(|| async {
             Ok(DataFusion::new(
-                self.ctx.clone(),
+                ctx.clone(),
                 self.relative_path.clone(),
                 self.pb.clone(),
             ))
         });
 
-        let result = Self::run_file_in_runner(path, runner).await;
+        let result: std::result::Result<(), Error> = Self::run_file_in_runner(path, runner).await;
         self.pb.finish_and_clear();
 
         result
@@ -65,22 +70,39 @@ impl DataFusionEngine {
     pub async fn new(config: TomlTable) -> Result<Self> {
         let session_config = SessionConfig::new().with_target_partitions(4);
         let ctx = SessionContext::new_with_config(session_config);
-        ctx.register_catalog("default", Self::create_catalog(&config).await?);
+        ctx.register_catalog("demo", Self::create_catalog(&config).await?);
         Ok(Self {
             ctx,
             relative_path: PathBuf::from("testdata"),
-            pb: ProgressBar::new(100)
+            pb: ProgressBar::new(100),
+            config,
         })
     }
 
     async fn create_catalog(_: &TomlTable) -> anyhow::Result<Arc<dyn CatalogProvider>> {
-        let temp_dir = TempDir::new()?;
-        let file_io = FileIOBuilder::new_fs_io().build()?;
-        let iceberg_catalog = MemoryCatalog::new(file_io, Some(temp_dir.path().to_str().unwrap().to_string()));
+        let catalog = RestCatalogBuilder::default()
+            .load(
+                "rest",
+                HashMap::from([
+                    (
+                        REST_CATALOG_PROP_URI.to_string(),
+                        "http://localhost:8181".to_string(),
+                    ),
+                    (
+                        "s3.endpoint".to_string(),
+                        "http://localhost:9000".to_string(),
+                    ),
+                    ("s3.access-key-id".to_string(), "admin".to_string()),
+                    ("s3.secret-access-key".to_string(), "password".to_string()),
+                    ("s3.region".to_string(), "us-east-1".to_string()),
+                    ("s3.disable-config-load".to_string(), "true".to_string()),
+                ]),
+            )
+            .await?;
 
-        let client = Arc::new(iceberg_catalog);
-
-        Ok(Arc::new(IcebergCatalogProvider::try_new(client).await?))
+        Ok(Arc::new(
+            IcebergCatalogProvider::try_new(Arc::new(catalog)).await?,
+        ))
     }
 
     async fn run_file_in_runner<D: AsyncDB, M: MakeConnection<Conn = D>>(
@@ -89,8 +111,7 @@ impl DataFusionEngine {
     ) -> Result<()> {
         println!("run file in runner");
 
-        let records =
-            parse_file(&path).context("Failed to parse slt file")?;
+        let records = parse_file(&path).context("Failed to parse slt file")?;
 
         let mut errs = vec![];
         for record in records.into_iter() {

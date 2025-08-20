@@ -1,2 +1,2 @@
 mod conversion;
-mod normalize;
+pub mod normalize;

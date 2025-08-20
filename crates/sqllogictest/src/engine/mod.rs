@@ -21,7 +21,9 @@ mod spark;
 use std::path::Path;
 
 use toml::Table as TomlTable;
+
 use crate::engine::datafusion::DataFusionEngine;
+use crate::engine::spark::SparkEngine;
 use crate::error::Result;
 
 #[async_trait::async_trait]
@@ -32,6 +34,7 @@ pub trait EngineRunner {
 pub async fn load_engine(typ: &str, cfg: TomlTable) -> Result<Box<dyn EngineRunner>> {
     match typ {
         "datafusion" => Ok(Box::new(DataFusionEngine::new(cfg).await?)),
-        _ => Err(anyhow::anyhow!("Unsupported engine type: {}", typ).into())
+        "spark-connect" => Ok(Box::new(SparkEngine::new(cfg).await?)),
+        _ => Err(anyhow::anyhow!("Unsupported engine type: {}", typ).into()),
     }
 }

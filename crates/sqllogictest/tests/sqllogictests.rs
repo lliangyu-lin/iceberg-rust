@@ -18,12 +18,13 @@
 use std::fs;
 use std::path::PathBuf;
 use std::sync::RwLock;
-use libtest_mimic::{Arguments, Trial};
-use tokio::runtime::Handle;
+
 use iceberg_sqllogictest::schedule;
 use iceberg_sqllogictest::schedule::Schedule;
 use iceberg_test_utils::docker::DockerCompose;
 use iceberg_test_utils::normalize_test_name;
+use libtest_mimic::{Arguments, Trial};
+use tokio::runtime::Handle;
 
 static DOCKER_COMPOSE_ENV: RwLock<Option<DockerCompose>> = RwLock::new(None);
 
