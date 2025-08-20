@@ -57,7 +57,7 @@ impl Schedule {
         Ok(Self { engines, steps })
     }
 
-    async fn parse_engines(table: &Table) -> anyhow::Result<HashMap<String, Box<dyn Engine>>> {
+    async fn parse_engines(table: &Table) -> anyhow::Result<HashMap<String, Box<dyn EngineRunner>>> {
         println!("parsing engine...");
         let engines = table
             .get("engines")

@@ -3833,11 +3833,15 @@ name = "iceberg-sqllogictest"
 version = "0.6.0"
 dependencies = [
  "anyhow",
+ "arrow",
  "async-trait",
+ "bigdecimal",
  "datafusion",
+ "datafusion-common",
  "datafusion-sqllogictest",
  "enum-ordinalize",
  "env_logger",
+ "half",
  "iceberg",
  "iceberg-catalog-rest",
  "iceberg-datafusion",
@@ -3846,6 +3850,7 @@ dependencies = [
  "itertools 0.13.0",
  "libtest-mimic 0.7.3",
  "log",
+ "rust_decimal",
  "spark-connect-rs",
  "sqllogictest",
  "tempfile",

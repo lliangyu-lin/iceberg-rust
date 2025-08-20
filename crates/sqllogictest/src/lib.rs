@@ -23,3 +23,4 @@ mod engine;
 #[allow(dead_code)]
 pub mod error;
 pub mod schedule;
+mod display;
