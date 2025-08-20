@@ -174,33 +174,3 @@ pub fn cell_to_string(col: &ArrayRef, row: usize) -> anyhow::Result<String> {
         }
     }
 }
-
-/// Converts columns to a result as expected by sqllogicteset.
-pub(crate) fn convert_schema_to_types(columns: &Fields) -> Vec<DFColumnType> {
-    columns
-        .iter()
-        .map(|f| f.data_type())
-        .map(|data_type| match data_type {
-            DataType::Boolean => DFColumnType::Boolean,
-            DataType::Int8
-            | DataType::Int16
-            | DataType::Int32
-            | DataType::Int64
-            | DataType::UInt8
-            | DataType::UInt16
-            | DataType::UInt32
-            | DataType::UInt64 => DFColumnType::Integer,
-            DataType::Float16
-            | DataType::Float32
-            | DataType::Float64
-            | DataType::Decimal128(_, _)
-            | DataType::Decimal256(_, _) => DFColumnType::Float,
-            DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View => DFColumnType::Text,
-            DataType::Date32 | DataType::Date64 | DataType::Time32(_) | DataType::Time64(_) => {
-                DFColumnType::DateTime
-            }
-            DataType::Timestamp(_, _) => DFColumnType::Timestamp,
-            _ => DFColumnType::Another,
-        })
-        .collect()
-}

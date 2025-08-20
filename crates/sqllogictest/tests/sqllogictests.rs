@@ -29,10 +29,8 @@ use tokio::runtime::Handle;
 static DOCKER_COMPOSE_ENV: RwLock<Option<DockerCompose>> = RwLock::new(None);
 
 pub fn main() {
-    println!("Starting sqllogic main!");
     env_logger::init();
 
-    log::info!("Starting tokio runtime...");
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
@@ -43,15 +41,11 @@ pub fn main() {
 
     setup_env();
 
-    log::info!("Creating tests...");
     let tests = collect_trials(rt.handle().clone()).unwrap();
-
-    log::info!("Starting tests...");
     let result = libtest_mimic::run(&args, tests);
 
-    log::info!("Shutting down tokio runtime...");
-    drop(rt);
     teardown_env();
+    drop(rt);
 
     result.exit();
 }
@@ -111,7 +105,6 @@ pub(crate) fn collect_schedule_files() -> anyhow::Result<Vec<PathBuf>> {
 
 pub(crate) async fn run_schedule(schedule_file: PathBuf) -> anyhow::Result<()> {
     let schedule_file_name = schedule_file.file_name().unwrap().to_string_lossy();
-    println!("running schedule: {schedule_file_name}");
     let schedules = Schedule::parse(schedule_file).await?;
     schedules.run().await?;
 

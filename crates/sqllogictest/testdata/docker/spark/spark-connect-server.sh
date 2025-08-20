@@ -14,14 +14,14 @@ PACKAGES="$PACKAGES,org.apache.spark:spark-connect_2.12:$SPARK_VERSION"
   --master local[3] \
   --conf spark.driver.extraJavaOptions="-Dlog4j.configuration=file:///spark-script/log4j2.properties" \
   --conf spark.driver.bindAddress=0.0.0.0 \
-  --conf spark.sql.catalog.demo=org.apache.iceberg.spark.SparkCatalog \
+  --conf spark.sql.catalog.default=org.apache.iceberg.spark.SparkCatalog \
   --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
-  --conf spark.sql.catalog.demo.catalog-impl=org.apache.iceberg.rest.RESTCatalog \
-  --conf spark.sql.catalog.demo.uri=http://rest:8181 \
-  --conf spark.sql.catalog.demo.s3.endpoint=http://minio:9000 \
-  --conf spark.sql.catalog.demo.s3.path.style.access=true \
-  --conf spark.sql.catalog.demo.s3.access.key=admin \
-  --conf spark.sql.catalog.demo.s3.secret.key=password \
-  --conf spark.sql.defaultCatalog=demo
+  --conf spark.sql.catalog.default.catalog-impl=org.apache.iceberg.rest.RESTCatalog \
+  --conf spark.sql.catalog.default.uri=http://rest:8181 \
+  --conf spark.sql.catalog.default.s3.endpoint=http://minio:9000 \
+  --conf spark.sql.catalog.default.s3.path.style.access=true \
+  --conf spark.sql.catalog.default.s3.access.key=admin \
+  --conf spark.sql.catalog.default.s3.secret.key=password \
+  --conf spark.sql.defaultCatalog=default
 
 tail -f /opt/spark/logs/spark*.out

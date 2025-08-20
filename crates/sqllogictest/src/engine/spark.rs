@@ -2,7 +2,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use anyhow::{Context, anyhow};
-use datafusion_sqllogictest::{DFColumnType, DFOutput, convert_schema_to_types};
+use datafusion_sqllogictest::{DFColumnType, DFOutput, convert_schema_to_types, convert_batches};
 use spark_connect_rs::{SparkSession, SparkSessionBuilder};
 use sqllogictest::{AsyncDB, DBOutput, Record, parse_file};
 use toml::Table as TomlTable;
@@ -78,7 +78,7 @@ impl SparkEngine {
         let types = convert_schema_to_types(schema.fields());
 
         // Convert batches to rows of strings
-        let rows = crate::display::normalize::convert_batches(vec![batches])?;
+        let rows = convert_batches(vec![batches]).unwrap();
 
         Ok(DBOutput::Rows { types, rows })
     }
