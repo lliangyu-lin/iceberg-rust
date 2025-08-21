@@ -19,8 +19,6 @@
 // [Apache Datafusion](https://github.com/apache/datafusion/tree/main/datafusion/sqllogictest)
 
 mod display;
-#[allow(dead_code)]
 mod engine;
-#[allow(dead_code)]
 pub mod error;
 pub mod schedule;
