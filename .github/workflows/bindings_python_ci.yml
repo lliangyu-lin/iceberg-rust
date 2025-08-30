@@ -21,6 +21,7 @@ on:
   push:
     branches:
       - main
+      - 'integ-df-test-fix-local'
   pull_request:
     branches:
       - main
