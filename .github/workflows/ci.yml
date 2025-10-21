@@ -21,6 +21,7 @@ on:
   push:
     branches:
       - main
+      - 'sqllogic-datafusion-test'
   pull_request:
     paths:
       - '**'                              # Include all files and directories in the repository by default.
