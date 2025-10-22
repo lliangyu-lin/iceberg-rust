@@ -55,6 +55,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Free disk space
+        run: bash ./.github/free_disk_space.sh
+
       - name: Setup Rust toolchain
         uses: ./.github/actions/setup-builder
 
