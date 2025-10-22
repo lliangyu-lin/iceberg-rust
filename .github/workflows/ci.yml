@@ -90,6 +90,17 @@ jobs:
           - macos-latest
           - windows-latest
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+          root-reserve-mb: 10240
+          temp-reserve-mb: 10240
+
       - uses: actions/checkout@v5
 
       - name: Setup Rust toolchain
@@ -102,38 +113,6 @@ jobs:
         uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check disk usage
-        run: |
-          echo "=== Disk Space Overview ==="
-
-          if [ "${{ runner.os }}" = "Linux" ]; then
-            echo "--- Ubuntu ---"
-            df -h /
-            echo
-            echo "=== Top 20 largest directories ==="
-            sudo du -xh / 2>/dev/null | sort -rh | head -n 20
-
-          elif [ "${{ runner.os }}" = "macOS" ]; then
-            echo "--- macOS ---"
-            df -h /
-            echo
-            echo "=== Top 20 largest directories ==="
-            sudo du -xh / 2>/dev/null | sort -rh | head -n 20
-
-          else
-            echo "--- Windows ---"
-            echo "=== Disk Space Overview ==="
-            Get-PSDrive -PSProvider FileSystem | Sort-Object Used -Descending | Format-Table -AutoSize
-            echo
-            echo "=== Top 20 largest directories (approximate) ==="
-            Get-ChildItem -Path C:\ -Recurse -ErrorAction SilentlyContinue |
-              Where-Object { -not $_.PSIsContainer } |
-              Sort-Object Length -Descending |
-              Select-Object FullName, @{Name='SizeMB';Expression={[math]::Round($_.Length/1MB,2)}} -First 20 |
-              Format-Table -AutoSize
-          fi
-        shell: bash
 
       - name: Build
         run: make build
