@@ -55,9 +55,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Free disk space
-        run: bash ./.github/free_disk_space.sh
-
       - name: Setup Rust toolchain
         uses: ./.github/actions/setup-builder
 
@@ -105,6 +102,15 @@ jobs:
         uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check disk usage (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          echo "=== Disk Space Overview ==="
+          df -h /
+          echo
+          echo "=== Top 20 largest directories ==="
+          sudo du -xh / 2>/dev/null | sort -rh | head -n 20
 
       - name: Build
         run: make build
