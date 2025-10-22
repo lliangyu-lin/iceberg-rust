@@ -90,7 +90,8 @@ jobs:
           - macos-latest
           - windows-latest
     steps:
-      - name: Maximize build space
+      - name: Maximize build space (Ubuntu)
+        if: runner.os == 'Linux'
         uses: easimon/maximize-build-space@master
         with:
           remove-dotnet: "true"
