@@ -27,7 +27,6 @@ use crate::engine::datafusion::DataFusionEngine;
 use crate::error::{Error, Result};
 
 const TYPE_DATAFUSION: &str = "datafusion";
-const ERRS_PER_FILE_LIMIT: usize = 10;
 
 #[async_trait::async_trait]
 pub trait EngineRunner: Send {
@@ -56,27 +55,12 @@ where
 
     let records = parse_file(&path).map_err(|e| Error(anyhow!("parsing SLT file failed: {e}")))?;
 
-    let mut errs = vec![];
     for record in records {
-        if let Err(err) = runner.run_async(record).await {
-            errs.push(format!("{err}"));
-        }
-    }
+        if let Err(err) = runner.run_async(record.clone()).await {
+            tracing::error!("SLT test failed at {}: {}", path.display(), err);
 
-    if !errs.is_empty() {
-        let mut msg = format!("{} errors in file {}\n\n", errs.len(), path.display());
-        for (i, err) in errs.iter().enumerate() {
-            if i >= ERRS_PER_FILE_LIMIT {
-                msg.push_str(&format!(
-                    "... other {} errors in {} not shown ...\n\n",
-                    errs.len() - ERRS_PER_FILE_LIMIT,
-                    path.display()
-                ));
-                break;
-            }
-            msg.push_str(&format!("{}. {err}\n\n", i + 1));
+            return Err(Error(anyhow!(err.to_string())));
         }
-        return Err(Error(anyhow!(msg)));
     }
 
     Ok(())

@@ -21,9 +21,10 @@ use std::path::PathBuf;
 use iceberg_sqllogictest::schedule::Schedule;
 use libtest_mimic::{Arguments, Trial};
 use tokio::runtime::Handle;
+use tracing_subscriber::{EnvFilter, fmt};
 
 pub fn main() {
-    env_logger::init();
+    init_tracing();
 
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -41,9 +42,21 @@ pub fn main() {
     result.exit();
 }
 
+fn init_tracing() {
+    // Use RUST_LOG if set (e.g. RUST_LOG=debug), else default to "info"
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+
+    fmt()
+        .with_env_filter(filter)
+        .with_target(true)
+        .with_level(true)
+        .compact()
+        .init();
+}
+
 pub(crate) fn collect_trials(handle: Handle) -> anyhow::Result<Vec<Trial>> {
     let schedule_files = collect_schedule_files()?;
-    log::debug!(
+    tracing::debug!(
         "Found {} schedules files: {:?}",
         schedule_files.len(),
         &schedule_files
